@@ -1,58 +1,49 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import CardList from '../Components/CardList';
-// import { robots } from './robots';
 import SearchBox from '../Components/SearchBox';
-import './App.css'
-import Scroll from '../Components/Scroll'
+import './App.css';
+import Scroll from '../Components/Scroll';
 import ErrorBoundry from '../Components/ErrorBoundry';
+import { setSearchField, fetchRobots } from '../store/robotSlice';
 
-class App extends React.Component {
-    constructor() {
-        super()
-        // any component with state is a smart component
-        this.state = {
-            robots: [],
-            searchfield: ''
-        }
+function App() {
+    const dispatch = useDispatch();
+    const robots = useSelector((state) => state.robots.items);
+    const searchfield = useSelector((state) => state.robots.searchfield);
+    const status = useSelector((state) => state.robots.status);
+
+    useEffect(() => {
+        dispatch(fetchRobots());
+    }, [dispatch]);
+
+    const onSearchChange = (event) => {
+        dispatch(setSearchField(event.target.value));
+    };
+
+    const filteredRobots = robots.filter((robot) =>
+        robot.name.toLowerCase().includes(searchfield.toLowerCase())
+    );
+
+    if (status === 'loading') {
+        return <h1>Loading....</h1>;
     }
 
-    componentDidMount (){
-        console.log('check')
-        fetch('https://jsonplaceholder.typicode.com/users').then(response => response.json())
-        .then(users => this.setState({'robots':users}))
+    if (status === 'failed') {
+        return <h1>Oops! Something went wrong.</h1>;
     }
 
-    // anytime u make your own components use arrow functions to avoid errors
-    onSearchChange = (event) => {
-        event.preventDefault()
-        this.setState({ searchfield: event.target.value })
-
-    }
-    render() {
-
-        const {robots, searchfield} = this.state
-        const filteredRobots = robots.filter(
-            robot => {
-                return robot.name.toLowerCase().includes(searchfield.toLowerCase())
-            })
-        
-            return !robots.length ?
-                <h1>Loading....</h1>
-            : (
-                    <div className='tc'>
-                        <h1 className='tc f2 '>RoboFriends</h1>
-                        <SearchBox searchChange={this.onSearchChange} />
-                        <Scroll>
-                            {/* if there is and error the error boundry would handle it gracefully */}
-                            <ErrorBoundry>
-                        <CardList robots={filteredRobots} />
-                        </ErrorBoundry>
-                        </Scroll>
-                    </div>
-                )
-            }
-    
-    
+    return (
+        <div className="tc">
+            <h1 className="tc f2">RoboFriends</h1>
+            <SearchBox searchChange={onSearchChange} />
+            <Scroll>
+                <ErrorBoundry>
+                    <CardList robots={filteredRobots} />
+                </ErrorBoundry>
+            </Scroll>
+        </div>
+    );
 }
 
-export default App
+export default App;
